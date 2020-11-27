@@ -8,11 +8,6 @@ let
     then pythonPackages
     else getAttr pythonPackages pkgs;
 
-  # Works with the new python-packages, still can fallback to the old
-  # variant.
-  basePythonPackagesUnfix = basePythonPackages.__unfix__ or (
-    self: basePythonPackages.override (a: { inherit self; }));
-
   elem = builtins.elem;
   basename = path: last (splitString "/" path);
   startsWith = prefix: full: let
@@ -64,9 +59,11 @@ let
   };
 
   myPythonPackages =
-    (fix
-    (extends pythonPackagesLocalOverrides
-    (extends pythonPackagesGenerated
-             basePythonPackagesUnfix)));
+    let
+      super =
+        basePythonPackages //
+        pythonPackagesGenerated myPythonPackages basePythonPackages;
+    in
+      super // pythonPackagesLocalOverrides myPythonPackages super;
 
 in myPythonPackages.pip2nix
